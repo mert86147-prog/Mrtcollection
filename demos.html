@@ -1,0 +1,227 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+<meta charset="UTF-8">
+<title>MRTCOLLECTİON</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<style>
+:root{
+ --purple:#7b2cbf;
+ --bg:#f5f5fa;
+ --dark:#121212;
+ --white:#ffffff;
+}
+
+*{margin:0;padding:0;box-sizing:border-box;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI";transition:all .3s;}
+
+body{background:var(--bg);}
+body.dark{background:var(--dark);color:white;}
+
+header{
+ background:white;
+ padding:22px 40px;
+ display:flex;
+ justify-content:space-between;
+ align-items:center;
+ box-shadow:0 10px 40px rgba(0,0,0,.05);
+}
+body.dark header{background:#1e1e1e;}
+
+.logo{font-size:22px;letter-spacing:4px;font-weight:600;color:var(--purple);}
+header button{background:var(--purple);color:white;border:none;padding:10px 18px;border-radius:30px;cursor:pointer;margin-left:10px;}
+
+.hero{text-align:center;padding:80px 40px 60px;}
+.hero h1{font-size:44px;font-weight:600;color:var(--purple);}
+.hero span{color:var(--purple);}
+
+.products{
+ padding:40px;
+ display:grid;
+ grid-template-columns:repeat(auto-fit,minmax(260px,1fr));
+ gap:30px;
+}
+
+.card{
+ background:white;
+ border-radius:26px;
+ padding:30px;
+ box-shadow:0 25px 60px rgba(0,0,0,.08);
+ display:flex;
+ flex-direction:column;
+ justify-content:space-between;
+ cursor:pointer;
+ opacity:0;
+ transform:translateY(20px);
+ animation:fadeIn 0.6s forwards;
+}
+body.dark .card{background:#1f1f1f;}
+.card:hover{transform:translateY(-8px) scale(1.02);}
+
+.card h3{color:var(--purple);font-size:20px;margin-bottom:10px;}
+.card p{font-size:14px;opacity:.8;}
+.price{font-size:18px;font-weight:600;margin:15px 0;}
+.card select{margin:8px 0;padding:6px;border-radius:8px;border:1px solid #ccc;}
+
+.card button{margin-top:12px;padding:12px;background:var(--purple);border:none;color:white;border-radius:14px;font-size:15px;cursor:pointer;}
+
+/* Animasyonlar */
+@keyframes fadeIn{to{opacity:1;transform:translateY(0);}}
+@keyframes fadeOut{to{opacity:0;transform:translateY(20px);}}
+
+.cart{
+ position:fixed;
+ top:0;
+ right:-340px;
+ width:340px;
+ height:100vh;
+ background:white;
+ padding:25px;
+ box-shadow:-20px 0 60px rgba(0,0,0,.25);
+ transition:.4s;
+ overflow-y:auto;
+ z-index:999;
+}
+.cart.open{right:0;}
+body.dark .cart{background:#1e1e1e;}
+
+.cart h3{color:var(--purple);margin-bottom:15px;}
+.cart-item{
+ display:flex;
+ justify-content:space-between;
+ margin:10px 0;
+ font-size:14px;
+ align-items:center;
+ opacity:1;
+ transition:.4s;
+}
+.cart-item button{margin-left:5px;padding:2px 8px;border:none;border-radius:6px;background:#d33;color:white;cursor:pointer;}
+
+.total{margin-top:20px;font-weight:600;text-align:right;}
+
+.modal{position:fixed;inset:0;background:rgba(0,0,0,.55);display:none;justify-content:center;align-items:center;}
+.modal-content{background:white;padding:35px;border-radius:25px;max-width:420px;width:90%;}
+body.dark .modal-content{background:#1e1e1e;}
+.modal-content h3{color:var(--purple);margin-bottom:10px;}
+.modal-content button{margin-top:20px;width:100%;padding:12px;background:var(--purple);border:none;color:white;border-radius:12px;cursor:pointer;}
+
+footer{margin-top:80px;padding:30px;text-align:center;background:white;color:var(--purple);}
+body.dark footer{background:#1e1e1e;}
+</style>
+</head>
+
+<body>
+
+<header>
+ <div class="logo">MRTCOLLECTİON</div>
+ <div>
+   <button id="darkBtn">🌙</button>
+   <button onclick="toggleCart()">🛒</button>
+ </div>
+</header>
+
+<section class="hero">
+ <h1><span>MRTCOLLECTİON</span></h1>
+</section>
+
+<section class="products" id="products"></section>
+
+<div class="cart" id="cart">
+ <h3>Sepet <button onclick="closeCart()">×</button></h3>
+ <div id="cartItems"></div>
+ <div class="total">Toplam: <span id="total">0</span> ₺</div>
+</div>
+
+<div class="modal" id="modal">
+ <div class="modal-content">
+   <h3 id="modalTitle"></h3>
+   <p id="modalDesc"></p>
+   <p id="modalPrice"></p>
+   <button onclick="closeModal()">Kapat</button>
+ </div>
+</div>
+
+<footer>© 2026 MRTCOLLECTİON</footer>
+
+<script>
+const products=[
+ {id:1,name:"Oversize Tişört",price:450,desc:"Premium pamuk",sizes:["S","M","L","XL"],colors:["Mor","Beyaz"]},
+ {id:2,name:"Premium Hoodie",price:950,desc:"Kalın kumaş",sizes:["M","L","XL"],colors:["Mor","Siyah"]},
+ {id:3,name:"Street Jacket",price:1350,desc:"Minimal tasarım",sizes:["L","XL"],colors:["Siyah","Beyaz"]}
+];
+
+let cart=[];
+const productsDiv=document.getElementById("products");
+const cartDiv=document.getElementById("cartItems");
+const totalSpan=document.getElementById("total");
+
+function renderProducts(){
+ productsDiv.innerHTML="";
+ products.forEach((p,i)=>{
+  const delay=i*0.1;
+  productsDiv.innerHTML+=`
+   <div class="card" style="animation-delay:${delay}s" onclick="openModal('${p.name}','${p.desc}',${p.price})">
+     <h3>${p.name}</h3>
+     <p>${p.desc}</p>
+     <div class="price">${p.price} ₺</div>
+     <label>Beden:</label>
+     <select id="size${p.id}">${p.sizes.map(s=>`<option>${s}</option>`).join('')}</select>
+     <label>Renk:</label>
+     <select id="color${p.id}">${p.colors.map(c=>`<option>${c}</option>`).join('')}</select>
+     <button onclick="event.stopPropagation();addToCart(${p.id})">Sepete Ekle</button>
+   </div>`;
+ });
+}
+
+function addToCart(id){
+ const p=products.find(x=>x.id===id);
+ const size=document.getElementById("size"+id).value;
+ const color=document.getElementById("color"+id).value;
+ cart.push({...p,size,color});
+ renderCart();
+}
+
+function renderCart(){
+ cartDiv.innerHTML="";
+ let total=0;
+ cart.forEach((i,index)=>{
+  total+=i.price;
+  const item=document.createElement('div');
+  item.className='cart-item';
+  item.style.opacity=0;
+  item.innerHTML=`${i.name} (${i.size}, ${i.color}) <span>${i.price} ₺</span> <button onclick="removeFromCart(${index})">Sil</button>`;
+  cartDiv.appendChild(item);
+  setTimeout(()=>{item.style.opacity=1;},50);
+ });
+ totalSpan.innerText=total;
+}
+
+function removeFromCart(index){
+ const itemDiv=cartDiv.children[index];
+ itemDiv.style.opacity=0;
+ setTimeout(()=>{cart.splice(index,1);renderCart();},300);
+}
+
+function toggleCart(){document.getElementById("cart").classList.toggle("open");}
+function closeCart(){document.getElementById("cart").classList.remove("open");}
+
+function toggleDark(){
+ document.body.classList.toggle("dark");
+ localStorage.setItem('dark',document.body.classList.contains('dark'));
+}
+document.getElementById("darkBtn").onclick=toggleDark;
+if(localStorage.getItem('dark')==='true'){document.body.classList.add('dark');}
+
+function openModal(name,desc,price){
+ document.getElementById("modalTitle").innerText=name;
+ document.getElementById("modalDesc").innerText=desc;
+ document.getElementById("modalPrice").innerText=price+" ₺";
+ document.getElementById("modal").style.display="flex";
+}
+function closeModal(){document.getElementById("modal").style.display="none";}
+
+renderProducts();
+</script>
+
+</body>
+</html>
